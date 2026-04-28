@@ -1,0 +1,710 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>OECD Private Philanthropy Dashboard</title>
+<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:ital,wght@0,300;0,400;0,600;1,300;1,400&family=Source+Sans+3:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --oecd-blue: #003189;
+  --oecd-blue-mid: #1a4aab;
+  --oecd-blue-light: #e8edf7;
+  --oecd-blue-pale: #f0f3fb;
+  --white: #ffffff;
+  --gray-50: #f7f8fa;
+  --gray-100: #eef0f4;
+  --gray-200: #d8dce6;
+  --gray-400: #9ba3b8;
+  --gray-600: #5a6278;
+  --gray-800: #2c3147;
+  --text: #1a1d2e;
+  --serif: 'Source Serif 4', Georgia, serif;
+  --sans: 'Source Sans 3', system-ui, sans-serif;
+  --nav-h: 60px;
+  --border: 1px solid var(--gray-200);
+}
+
+html { scroll-behavior: smooth; }
+
+body {
+  font-family: var(--sans);
+  background: var(--white);
+  color: var(--text);
+  min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ── NAV ── */
+.top-bar {
+  background: var(--oecd-blue);
+  height: var(--nav-h);
+  display: flex;
+  align-items: center;
+  padding: 0 2.5rem;
+  position: sticky;
+  top: 0;
+  z-index: 200;
+  gap: 2rem;
+}
+
+.top-bar-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  text-decoration: none;
+  flex-shrink: 0;
+}
+
+.logo-mark { width: 34px; height: 34px; flex-shrink: 0; }
+
+.brand-text {
+  font-family: var(--sans);
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--white);
+  letter-spacing: 0.01em;
+  line-height: 1;
+}
+
+.brand-sub {
+  font-size: 0.65rem;
+  font-weight: 300;
+  color: rgba(255,255,255,0.65);
+  letter-spacing: 0.04em;
+  margin-top: 2px;
+}
+
+.top-bar-divider {
+  width: 1px;
+  height: 28px;
+  background: rgba(255,255,255,0.2);
+  flex-shrink: 0;
+}
+
+.nav-tabs {
+  display: flex;
+  list-style: none;
+  height: var(--nav-h);
+}
+
+.nav-tabs li { height: 100%; display: flex; }
+
+.nav-tabs li button {
+  background: none;
+  border: none;
+  border-bottom: 3px solid transparent;
+  color: rgba(255,255,255,0.7);
+  font-family: var(--sans);
+  font-size: 0.8rem;
+  font-weight: 400;
+  padding: 0 1.1rem;
+  height: 100%;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: color 0.15s, border-color 0.15s, background 0.15s;
+  display: flex;
+  align-items: center;
+}
+
+.nav-tabs li button:hover { color: white; background: rgba(255,255,255,0.07); }
+
+.nav-tabs li button.active {
+  color: white;
+  border-bottom-color: white;
+  font-weight: 500;
+}
+
+.tab-num {
+  display: inline-block;
+  font-size: 0.6rem;
+  font-weight: 600;
+  background: rgba(255,255,255,0.18);
+  border-radius: 3px;
+  padding: 1px 5px;
+  margin-right: 6px;
+  letter-spacing: 0.05em;
+}
+
+.nav-tabs li button.active .tab-num { background: rgba(255,255,255,0.28); }
+
+/* ── PAGES ── */
+.page { display: none; }
+.page.active { display: block; }
+
+/* ══════════════════════
+   LANDING
+══════════════════════ */
+.landing {
+  min-height: calc(100vh - var(--nav-h));
+  display: flex;
+  flex-direction: column;
+}
+
+.accent-bar { height: 4px; background: var(--oecd-blue); }
+
+.landing-hero {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 5rem 2rem 2rem;
+}
+
+.landing-inner { max-width: 760px; width: 100%; }
+
+.landing-kicker {
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--oecd-blue);
+  margin-bottom: 1.25rem;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.landing-kicker::before {
+  content: '';
+  display: inline-block;
+  width: 20px;
+  height: 2px;
+  background: var(--oecd-blue);
+}
+
+.landing-title {
+  font-family: var(--serif);
+  font-size: clamp(2rem, 4.5vw, 3.3rem);
+  font-weight: 300;
+  color: var(--text);
+  line-height: 1.2;
+  margin-bottom: 1.5rem;
+  letter-spacing: -0.01em;
+}
+
+.landing-title strong {
+  font-weight: 600;
+  color: var(--oecd-blue);
+}
+
+.landing-desc {
+  font-size: 0.95rem;
+  font-weight: 300;
+  color: var(--gray-600);
+  line-height: 1.75;
+  max-width: 560px;
+  margin-bottom: 2.75rem;
+  border-left: 3px solid var(--oecd-blue);
+  padding-left: 1.25rem;
+}
+
+.landing-prompt {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 0.82rem;
+  font-weight: 400;
+  color: var(--gray-600);
+  margin-bottom: 2.5rem;
+}
+
+.arrow-up {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.arrow-up span {
+  display: block;
+  width: 16px;
+  height: 2px;
+  background: var(--oecd-blue);
+  transform-origin: right center;
+}
+
+.arrow-up span:first-child { transform: rotate(-22deg) translateY(1px); }
+.arrow-up span:last-child  { transform: rotate(22deg) translateY(-1px); }
+
+/* Dashboard cards */
+.dash-overview {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1px;
+  background: var(--gray-200);
+  border: var(--border);
+  border-radius: 3px;
+  overflow: hidden;
+  margin-bottom: 3.5rem;
+}
+
+.dash-card {
+  background: var(--white);
+  padding: 1.4rem 1.2rem;
+  cursor: pointer;
+  transition: background 0.15s;
+  text-align: left;
+  border: none;
+  font-family: var(--sans);
+  width: 100%;
+}
+
+.dash-card:hover { background: var(--oecd-blue-pale); }
+
+.dash-card-num {
+  font-size: 0.62rem;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  color: var(--oecd-blue);
+  text-transform: uppercase;
+  margin-bottom: 0.65rem;
+}
+
+.dash-card-title {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text);
+  line-height: 1.3;
+  margin-bottom: 0.45rem;
+}
+
+.dash-card-desc {
+  font-size: 0.73rem;
+  font-weight: 300;
+  color: var(--gray-600);
+  line-height: 1.5;
+}
+
+.dash-card-link {
+  display: block;
+  margin-top: 0.9rem;
+  font-size: 0.75rem;
+  color: var(--oecd-blue);
+  font-weight: 500;
+}
+
+/* Data strip */
+.data-strip {
+  background: var(--oecd-blue-pale);
+  border-top: var(--border);
+  padding: 1.5rem 2.5rem;
+  display: flex;
+  justify-content: center;
+}
+
+.data-strip-inner {
+  display: flex;
+  max-width: 760px;
+  width: 100%;
+  border: var(--border);
+  border-radius: 3px;
+  overflow: hidden;
+  background: var(--white);
+}
+
+.data-item {
+  flex: 1;
+  padding: 1rem 1.5rem;
+  border-right: var(--border);
+  text-align: center;
+}
+
+.data-item:last-child { border-right: none; }
+
+.data-value {
+  display: block;
+  font-family: var(--serif);
+  font-size: 1.55rem;
+  font-weight: 600;
+  color: var(--oecd-blue);
+  line-height: 1;
+  margin-bottom: 0.28rem;
+}
+
+.data-label {
+  font-size: 0.65rem;
+  font-weight: 400;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--gray-400);
+}
+
+/* Footer */
+.landing-footer {
+  background: var(--gray-50);
+  border-top: var(--border);
+  padding: 1.1rem 2.5rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.landing-footer p { font-size: 0.7rem; color: var(--gray-400); font-weight: 300; }
+.landing-footer a { font-size: 0.7rem; color: var(--oecd-blue); text-decoration: none; }
+.landing-footer a:hover { text-decoration: underline; }
+
+/* ══════════════════════
+   DASHBOARD PAGES
+══════════════════════ */
+.dash-page {
+  min-height: calc(100vh - var(--nav-h));
+  background: var(--gray-50);
+}
+
+.dash-header {
+  background: var(--white);
+  border-bottom: var(--border);
+  padding: 1.4rem 2.5rem;
+}
+
+.dash-header-inner {
+  max-width: 1400px;
+  margin: 0 auto;
+  display: flex;
+  align-items: baseline;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.dash-label {
+  font-size: 0.62rem;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--oecd-blue);
+  background: var(--oecd-blue-light);
+  padding: 3px 9px;
+  border-radius: 2px;
+  white-space: nowrap;
+}
+
+.dash-title {
+  font-family: var(--serif);
+  font-size: 1.35rem;
+  font-weight: 400;
+  color: var(--text);
+}
+
+.dash-desc {
+  margin-left: auto;
+  font-size: 0.76rem;
+  font-weight: 300;
+  color: var(--gray-400);
+  max-width: 380px;
+  text-align: right;
+}
+
+.dash-body {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 1.5rem 2.5rem;
+}
+
+.tableau-container {
+  background: var(--white);
+  border: var(--border);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.tableau-placeholder {
+  width: 100%;
+  height: 88vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+}
+
+.placeholder-icon {
+  width: 42px;
+  height: 42px;
+  background: var(--oecd-blue-light);
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.placeholder-text { text-align: center; }
+.placeholder-text h3 { font-size: 0.88rem; font-weight: 500; color: var(--gray-800); margin-bottom: 0.2rem; }
+.placeholder-text p  { font-size: 0.75rem; color: var(--gray-400); font-weight: 300; }
+.placeholder-text code {
+  font-family: monospace;
+  font-size: 0.7rem;
+  background: var(--gray-100);
+  padding: 3px 10px;
+  border-radius: 3px;
+  color: var(--oecd-blue);
+  display: inline-block;
+  margin-top: 0.5rem;
+}
+
+.tableau-frame { width: 100%; height: 88vh; border: none; display: block; }
+
+@media (max-width: 900px) {
+  .top-bar { padding: 0 1.25rem; gap: 1rem; }
+  .nav-tabs li button { padding: 0 0.6rem; font-size: 0.72rem; }
+  .tab-num { display: none; }
+  .dash-overview { grid-template-columns: 1fr 1fr; }
+  .data-strip-inner { flex-wrap: wrap; }
+  .data-item { flex: 1 1 50%; }
+  .dash-header-inner { flex-direction: column; gap: 0.4rem; }
+  .dash-desc { margin-left: 0; text-align: left; }
+}
+</style>
+</head>
+<body>
+
+<header class="top-bar">
+  <a class="top-bar-brand" href="#" onclick="showPage('home');return false;">
+    <svg class="logo-mark" viewBox="0 0 34 34" fill="none">
+      <circle cx="17" cy="17" r="13" stroke="white" stroke-width="1.6"/>
+      <ellipse cx="17" cy="17" rx="6" ry="13" stroke="white" stroke-width="1.3"/>
+      <line x1="5" y1="13" x2="29" y2="13" stroke="white" stroke-width="1.3"/>
+      <line x1="5" y1="21" x2="29" y2="21" stroke="white" stroke-width="1.3"/>
+    </svg>
+    <div>
+      <div class="brand-text">OECD</div>
+      <div class="brand-sub">Private Philanthropy Data</div>
+    </div>
+  </a>
+
+  <div class="top-bar-divider"></div>
+
+  <ul class="nav-tabs">
+    <li><button id="tab-home" class="active" onclick="showPage('home')">Overview</button></li>
+    <li><button id="tab-dash1" onclick="showPage('dash1')"><span class="tab-num">01</span>Global Funding Explorer</button></li>
+    <li><button id="tab-dash2" onclick="showPage('dash2')"><span class="tab-num">02</span>SDG Alignment</button></li>
+    <li><button id="tab-dash3" onclick="showPage('dash3')"><span class="tab-num">03</span>Donor Deep Dive</button></li>
+    <li><button id="tab-dash4" onclick="showPage('dash4')"><span class="tab-num">04</span>Funding Adequacy Index</button></li>
+  </ul>
+</header>
+
+<!-- LANDING -->
+<div id="page-home" class="page active">
+  <div class="landing">
+    <div class="accent-bar"></div>
+
+    <div class="landing-hero">
+      <div class="landing-inner">
+        <div class="landing-kicker">OECD Philanthropy Intelligence Platform</div>
+
+        <h1 class="landing-title">
+          Moving from reporting what was funded<br>
+          to diagnosing <strong>where the next<br>dollar should go</strong>
+        </h1>
+
+        <p class="landing-desc">
+          An interactive data platform built on OECD private philanthropy records — covering 168 recipient countries, 129+ donor foundations, and disbursement flows across health, education, environment, and emergency response from 2020 to 2023.
+        </p>
+
+        <div class="landing-prompt">
+          <div class="arrow-up"><span></span><span></span></div>
+          Select a tab above to start exploring
+        </div>
+
+        <div class="dash-overview">
+          <button class="dash-card" onclick="showPage('dash1')">
+            <div class="dash-card-num">Dashboard 01</div>
+            <div class="dash-card-title">Global Funding Explorer</div>
+            <div class="dash-card-desc">World map, sector trends, top donors, and KPI overview. Where is money going, from whom, and to what?</div>
+            <span class="dash-card-link">Open →</span>
+          </button>
+          <button class="dash-card" onclick="showPage('dash2')">
+            <div class="dash-card-num">Dashboard 02</div>
+            <div class="dash-card-title">SDG Alignment</div>
+            <div class="dash-card-desc">Maps funding to all 17 UN Sustainable Development Goals. Identifies which goals are over or under-resourced.</div>
+            <span class="dash-card-link">Open →</span>
+          </button>
+          <button class="dash-card" onclick="showPage('dash3')">
+            <div class="dash-card-num">Dashboard 03</div>
+            <div class="dash-card-title">Donor Deep Dive</div>
+            <div class="dash-card-desc">Who gives what, where, and to whom? Searchable donor profiles with sector breakdowns and funding trends.</div>
+            <span class="dash-card-link">Open →</span>
+          </button>
+          <button class="dash-card" onclick="showPage('dash4')">
+            <div class="dash-card-num">Dashboard 04</div>
+            <div class="dash-card-title">Funding Adequacy Index</div>
+            <div class="dash-card-desc">A diagnostic score identifying where funding is proportionally inadequate relative to a country's overall exposure.</div>
+            <span class="dash-card-link">Open →</span>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div class="data-strip">
+      <div class="data-strip-inner">
+        <div class="data-item">
+          <span class="data-value">168</span>
+          <span class="data-label">Recipient Countries</span>
+        </div>
+        <div class="data-item">
+          <span class="data-value">129+</span>
+          <span class="data-label">Donor Foundations</span>
+        </div>
+        <div class="data-item">
+          <span class="data-value">2020–23</span>
+          <span class="data-label">Data Coverage</span>
+        </div>
+        <div class="data-item">
+          <span class="data-value">17</span>
+          <span class="data-label">SDGs Tracked</span>
+        </div>
+      </div>
+    </div>
+
+    <footer class="landing-footer">
+      <p>Source: OECD Private Philanthropy Dataset &mdash; Deflated USD disbursements</p>
+      <a href="https://www.oecd.org" target="_blank">OECD.org ↗</a>
+    </footer>
+  </div>
+</div>
+
+<!-- DASHBOARD 1
+     To embed: replace the tableau-placeholder div below with:
+     <iframe class="tableau-frame"
+       src="YOUR_TABLEAU_URL?:showVizHome=no&:embed=true">
+     </iframe>
+-->
+<div id="page-dash1" class="page">
+  <div class="dash-page">
+    <div class="dash-header">
+      <div class="dash-header-inner">
+        <span class="dash-label">Dashboard 01</span>
+        <h2 class="dash-title">Global Funding Explorer</h2>
+        <p class="dash-desc">Where is money going, from whom, and to what sectors?</p>
+      </div>
+    </div>
+    <div class="dash-body">
+      <div class="tableau-container">
+        <div class="tableau-placeholder">
+          <div class="placeholder-icon">
+            <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
+              <circle cx="11" cy="11" r="8" stroke="#003189" stroke-width="1.5"/>
+              <path d="M3 11h16M11 3c-2 2-3 4-3 8s1 6 3 8M11 3c2 2 3 4 3 8s-1 6-3 8" stroke="#003189" stroke-width="1.2"/>
+            </svg>
+          </div>
+          <div class="placeholder-text">
+            <h3>Global Funding Explorer</h3>
+            <p>Replace this block with your Tableau Public iframe</p>
+            <code>Search: REPLACE DASHBOARD 1</code>
+          </div>
+        </div>
+        <!-- REPLACE DASHBOARD 1 -->
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- DASHBOARD 2 -->
+<div id="page-dash2" class="page">
+  <div class="dash-page">
+    <div class="dash-header">
+      <div class="dash-header-inner">
+        <span class="dash-label">Dashboard 02</span>
+        <h2 class="dash-title">SDG Alignment</h2>
+        <p class="dash-desc">How do philanthropic flows map to the 17 Sustainable Development Goals?</p>
+      </div>
+    </div>
+    <div class="dash-body">
+      <div class="tableau-container">
+        <div class="tableau-placeholder">
+          <div class="placeholder-icon">
+            <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
+              <rect x="3" y="3" width="7" height="7" rx="1" stroke="#003189" stroke-width="1.5"/>
+              <rect x="12" y="3" width="7" height="7" rx="1" stroke="#003189" stroke-width="1.5"/>
+              <rect x="3" y="12" width="7" height="7" rx="1" stroke="#003189" stroke-width="1.5"/>
+              <rect x="12" y="12" width="7" height="7" rx="1" stroke="#003189" stroke-width="1.5"/>
+            </svg>
+          </div>
+          <div class="placeholder-text">
+            <h3>SDG Alignment</h3>
+            <p>Replace this block with your Tableau Public iframe</p>
+            <code>Search: REPLACE DASHBOARD 2</code>
+          </div>
+        </div>
+        <!-- REPLACE DASHBOARD 2 -->
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- DASHBOARD 3 -->
+<div id="page-dash3" class="page">
+  <div class="dash-page">
+    <div class="dash-header">
+      <div class="dash-header-inner">
+        <span class="dash-label">Dashboard 03</span>
+        <h2 class="dash-title">Donor Deep Dive</h2>
+        <p class="dash-desc">Who gives what, where, and to whom? Foundation-level analysis.</p>
+      </div>
+    </div>
+    <div class="dash-body">
+      <div class="tableau-container">
+        <div class="tableau-placeholder">
+          <div class="placeholder-icon">
+            <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
+              <circle cx="8" cy="8" r="3.5" stroke="#003189" stroke-width="1.5"/>
+              <path d="M2 19c0-3.3 2.7-6 6-6s6 2.7 6 6" stroke="#003189" stroke-width="1.5" stroke-linecap="round"/>
+              <circle cx="17" cy="7" r="2.5" stroke="#003189" stroke-width="1.5"/>
+              <path d="M15 17c0-2.2 1.8-4 4-4" stroke="#003189" stroke-width="1.5" stroke-linecap="round"/>
+            </svg>
+          </div>
+          <div class="placeholder-text">
+            <h3>Donor Deep Dive</h3>
+            <p>Replace this block with your Tableau Public iframe</p>
+            <code>Search: REPLACE DASHBOARD 3</code>
+          </div>
+        </div>
+        <!-- REPLACE DASHBOARD 3 -->
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- DASHBOARD 4 -->
+<div id="page-dash4" class="page">
+  <div class="dash-page">
+    <div class="dash-header">
+      <div class="dash-header-inner">
+        <span class="dash-label">Dashboard 04</span>
+        <h2 class="dash-title">Funding Adequacy Index</h2>
+        <p class="dash-desc">A diagnostic score identifying where funding is proportionally inadequate relative to country exposure.</p>
+      </div>
+    </div>
+    <div class="dash-body">
+      <div class="tableau-container">
+        <div class="tableau-placeholder">
+          <div class="placeholder-icon">
+            <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
+              <path d="M4 17L8 11L12 14L18 5" stroke="#003189" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+              <circle cx="18" cy="5" r="2" fill="#003189"/>
+            </svg>
+          </div>
+          <div class="placeholder-text">
+            <h3>Funding Adequacy Index</h3>
+            <p>Replace this block with your Tableau Public iframe</p>
+            <code>Search: REPLACE DASHBOARD 4</code>
+          </div>
+        </div>
+        <!-- REPLACE DASHBOARD 4 -->
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+function showPage(id) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-tabs button').forEach(b => b.classList.remove('active'));
+  document.getElementById('page-' + id).classList.add('active');
+  document.getElementById('tab-' + id).classList.add('active');
+  window.scrollTo(0, 0);
+}
+</script>
+</body>
+</html>
