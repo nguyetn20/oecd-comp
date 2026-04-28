@@ -1,17 +1,16 @@
 # OECD Case Competition — Scripts & Data Context
 
 ## Project Overview
-This is a case competition dashboard project for the OECD (Organisation for Economic Co-operation and Development).
-The client uses UN Sustainable Development Goal (SDG) language. The team is building a 4-tab Tableau dashboard.
+We are competing in the OECD (Organisation for Economic Co-operation and Development) case competition. The client frames work using UN Sustainable Development Goal (SDG) language, and **we built a 4-tab Tableau dashboard** so policymakers and funders can explore global philanthropic funding across geography, sector, time, and SDGs.
 
 **Input file:** `OECD Dataset.xlsx` (sheet: `complete_p4d3_df`)
 - 116,561 rows, 32 columns
 - Every row = one philanthropic grant transaction
 - Key money column: `usd_disbursements_defl` (inflation-adjusted USD millions, 2023 constant)
 
-**Main output file:** `OECD_cleaned_with_SDG_OHE.csv`
+**Intermediate output:** `OECD_cleaned_with_SDG_OHE.csv`
 - Same 116,561 rows + 17 new OHE columns: `sdg_goal_1` through `sdg_goal_17`
-- This is the file to load into Tableau
+- We pass this into `tableau_prep.py`; our final Tableau-ready CSVs are listed below.
 
 ---
 
@@ -19,68 +18,51 @@ The client uses UN Sustainable Development Goal (SDG) language. The team is buil
 
 | File | Rows | Cols | Used For |
 |---|---|---|---|
-| `OECD_main.csv` | 116,561 | 47 | Tabs 1, 3, 4 |
+| `OECD_main.csv` | 116,561 | ~50 (after enhancements) | Tabs 1, 3, 4 |
 | `OECD_sdg_long.csv` | 209,650 | 14 | Tab 2 (SDG widget) |
+| `OECD_fai.csv` | 3,808 | 13 | Tab 4 (FAI / burden) |
+| `OECD_timeline.csv` | 6 | 3 | Tab 1 (timeline reference lines) |
 
-**Load order in Tableau:**
-1. `OECD_main.csv` as primary data source
-2. `OECD_sdg_long.csv` as secondary (no join needed — serves separate sheets)
-3. For all time-series views: filter `is_nda_aggregate == False`
+**How we load it in Tableau:**
+1. `OECD_main.csv` as our primary data source
+2. `OECD_sdg_long.csv` as a secondary source (no join required — it powers different sheets)
+3. `OECD_fai.csv` and `OECD_timeline.csv` as additional sources as needed
+4. For all time-series views: we filter to `is_nda_aggregate == False`
 
-**Why two files?**
-- `OECD_main.csv` keeps one row per grant (original structure) with 17 OHE columns (`sdg_goal_1`–`sdg_goal_17`) — good for Tab 1 funding totals, Tab 3 donor analysis, Tab 4 FAI score
-- `OECD_sdg_long.csv` is "exploded" long format — one row per (grant × SDG goal) — lets Tableau directly `SUM(usd_disbursements_defl)` grouped by `sdg_goal` for the SDG grid and bubble chart
+**Why `OECD_main` vs `OECD_sdg_long`?**
+- `OECD_main.csv` keeps one row per grant with 17 OHE columns (`sdg_goal_1`–`sdg_goal_17`) — we use it for Tab 1 funding totals, Tab 3 donor analysis, and inputs to Tab 4.
+- `OECD_sdg_long.csv` is long format — one row per (grant × SDG goal) — so we can `SUM(usd_disbursements_defl)` by `sdg_goal` for the SDG grid and bubble chart.
 
-**On the 1,802 all-zero OHE rows:** Do NOT drop them from `OECD_main.csv` — they still have valid funding amounts for Tab 1/3/4. They are naturally absent from `OECD_sdg_long.csv` since no SDG rows are generated for them.
-
----
-
-## Scripts
-
-### `tableau_prep.py`
-**Purpose:** Final cleaning + export of Tableau-ready files. Run AFTER `sdg_ohe_pipeline.py`.
-
-**What it does:**
-1. Fixes `usd_commitment_defl` from text to float (37.7% non-null — missing in first 30k rows by design)
-2. Parses `expected_duration` text ranges → `duration_years` integer column (26.2% parsed; remainder is free text or null)
-3. Adds `is_nda_aggregate` boolean flag (True for `year == "2020-2023"` rows — only 3 rows in this dataset)
-4. Adds `year_clean` integer year (null for NDA rows; safe for time-series)
-5. Strips whitespace from all label columns (sector, region, country, org names)
-6. Drops deprioritized columns: `row_id`, `additional_info`, `channel_code`, `Sector` (numeric), `subsector` (numeric)
-7. Saves `OECD_main.csv` (47 columns)
-8. Melts the 17 OHE columns into long format → `OECD_sdg_long.csv` (14 columns, 209,650 rows)
-
-**To run:**
-```
-python "c:\Users\WrenzyBoba\Desktop\oecd case comp\scripts\tableau_prep.py"
-```
+**On the 1,802 all-zero OHE rows:** we do **not** drop them from `OECD_main.csv` — they still carry valid funding for Tabs 1/3/4. They simply do not appear in `OECD_sdg_long.csv` because no SDG rows are generated for them.
 
 ---
 
-### `sdg_ohe_pipeline.py`
-**Purpose:** SDG inference + one-hot encoding pipeline
+## Scripts (run in this order)
 
-**What it does:**
-1. Loads `OECD Dataset.xlsx`
-2. For rows WITH `sdg_focus` (101,337 rows / 86.9%):
-   - Parses semicolon-delimited SDG target strings (e.g. `"3.1;5.6;15.2"`)
-   - Floors each target to its integer SDG goal (e.g. 15.2 → 15)
-   - Deduplicates → set of goal integers (e.g. {3, 5, 15})
-3. For rows WITHOUT `sdg_focus` (15,224 rows / 13.1%):
-   - Infers top 1-3 SDGs from `subsector` code (preferred, more targeted)
-   - Falls back to `Sector` code if no subsector match
-   - **1 SDG** if very targeted (e.g. "Malaria control" → SDG 3)
-   - **2 SDGs** if cross-cutting (e.g. "Reproductive health" → SDG 3, 5)
-   - **3 SDGs** if broad/multisector (e.g. "Multisector aid" → SDG 1, 10, 17)
-   - **0s** for unallocated/unspecified sectors (no inferrable SDG)
-4. One-hot encodes into 17 columns (`sdg_goal_1` through `sdg_goal_17`)
-5. Saves result to `OECD_cleaned_with_SDG_OHE.csv`
+### 1. `sdg_ohe_pipeline.py`
+**Purpose:** SDG inference + one-hot encoding. **Run this first.**
 
-**Run results (last successful run):**
-- Parsed from existing sdg_focus: 101,337 rows
-- Inferred from sector/subsector:  13,422 rows
-- No SDG assignable (all zeros):    1,802 rows (Unallocated/Admin/Refugee admin)
-- Total SDG coverage:             114,759 / 116,561 rows (98.5%)
+**What we do:**
+1. Load `OECD Dataset.xlsx`
+2. For rows **with** `sdg_focus` (101,337 rows / 86.9%):
+   - Parse semicolon-delimited SDG target strings (e.g. `"3.1;5.6;15.2"`)
+   - Floor each target to its integer SDG goal (e.g. 15.2 → 15)
+   - Deduplicate → a set of goal integers (e.g. {3, 5, 15})
+3. For rows **without** `sdg_focus` (15,224 rows / 13.1%):
+   - Infer the top 1–3 SDGs from the `subsector` code (our preferred, more specific route)
+   - Fall back to `Sector` if we cannot match a subsector
+   - **1 SDG** when the subsector is very targeted (e.g. “Malaria control” → SDG 3)
+   - **2 SDGs** when it is cross-cutting (e.g. “Reproductive health” → SDG 3, 5)
+   - **3 SDGs** when it is broad / multisector (e.g. “Multisector aid” → SDG 1, 10, 17)
+   - **0s** for unallocated / unspecified sectors (nothing we can infer)
+4. One-hot encode into 17 columns (`sdg_goal_1` through `sdg_goal_17`)
+5. Save `OECD_cleaned_with_SDG_OHE.csv`
+
+**Our last successful run produced:**
+- Parsed from existing `sdg_focus`: 101,337 rows
+- Inferred from sector/subsector: 13,422 rows
+- No SDG assignable (all zeros): 1,802 rows (unallocated / admin)
+- Total SDG coverage: 114,759 / 116,561 rows (98.5%)
 
 **To run:**
 ```
@@ -89,46 +71,94 @@ python "c:\Users\WrenzyBoba\Desktop\oecd case comp\scripts\sdg_ohe_pipeline.py"
 
 ---
 
-## SDG Mapping Logic
-The mapping (`SUBSECTOR_TO_SDG` and `SECTOR_TO_SDG` dicts in the script) was built by:
-1. Reading all 17 SDG goal descriptions from https://sdgs.un.org/goals
-2. Extracting all unique sector/subsector codes and descriptions from the OECD dataset
-3. Manually mapping each OECD CRS sector/subsector to the most relevant UN SDGs
-   using the specificity rule (1 goal if narrow, 2-3 if broad)
+### 2. `tableau_prep.py`
+**Purpose:** Final cleaning and Tableau exports. **Run after** `sdg_ohe_pipeline.py`.
+
+**What we do:**
+1. Coerce `usd_commitment_defl` from text to float (37.7% non-null — the first ~30k rows lack it by design)
+2. Parse `expected_duration` text ranges → `duration_years` (26.2% parsed; the rest is free text or null)
+3. Add `is_nda_aggregate` (True where `year == "2020-2023"` — 3 rows in this dataset)
+4. Add `year_clean` (null for NDA rows for safe time-series)
+5. Strip whitespace on label columns (sector, region, country, org names, etc.)
+6. Drop deprioritized columns: `row_id`, `additional_info`, `channel_code`, numeric `Sector`, numeric `subsector`
+7. Write `OECD_main.csv` (~47 columns at this stage)
+8. Melt the 17 OHE columns to long form → `OECD_sdg_long.csv` (14 columns, 209,650 rows)
+
+**To run:**
+```
+python "c:\Users\WrenzyBoba\Desktop\oecd case comp\scripts\tableau_prep.py"
+```
 
 ---
 
-## Dashboard Plan (4 Tabs in Tableau)
+### 3. `final_enhancements.py`
+**Purpose:** Add map-ready ISO codes, thematic score, commitment gap, and a small events table. **Run after** `tableau_prep.py`.
 
-**Tab 1 - The Big Picture:** Global Funding Explorer
-- Choropleth map, stacked bar by sector over time, top donors, KPI tiles
-- Primary filters: year range, region, sector, donor country
+**What we do:** Update `OECD_main.csv` in place (adds `country_iso3`, `thematic_score`, `commitment_gap`) and write `OECD_timeline.csv` for annotation lines on Tab 1.
 
-**Tab 2 - SDG Alignment:** The SDG Widget
-- 17 SDG tiles (click to filter), bubble chart, SDG x sector heatmap, SDG x region bar
-- Powered by `sdg_goal_1` through `sdg_goal_17` OHE columns
+**To run:**
+```
+python "c:\Users\WrenzyBoba\Desktop\oecd case comp\scripts\final_enhancements.py"
+```
 
-**Tab 3 - Donor Deep Dive**
-- Searchable donor table, donor profile panel, line graph with dropdown, flow map
+---
 
-**Tab 4 - Funding Index:** Funding Adequacy Index (FAI) Score
-- FAI = (country-sector share) / (country overall share), tracked over time
-- Inverted as Burden Score; visualized as ranked dot plot, scatter, world map
+### 4. `build_fai.py`
+**Purpose:** Pre-compute the Funding Adequacy Index (FAI) and burden score for Tab 4. **Run after** `OECD_main.csv` exists (with the columns we need).
+
+**What we do:** Read `OECD_main.csv` and write `OECD_fai.csv` (country × sector × year).
+
+**To run:**
+```
+python "c:\Users\WrenzyBoba\Desktop\oecd case comp\scripts\build_fai.py"
+```
+
+---
+
+### 5. `export_docs.py` (optional)
+**Purpose:** Regenerate our data-summary Word document for documentation or the write-up. Requires `python-docx`.
+
+**To run:**
+```
+python "c:\Users\WrenzyBoba\Desktop\oecd case comp\scripts\export_docs.py"
+```
+
+---
+
+## SDG Mapping Logic
+We built the mapping (`SUBSECTOR_TO_SDG` and `SECTOR_TO_SDG` in the script) by:
+1. Reading all 17 SDG goal descriptions from https://sdgs.un.org/goals
+2. Pulling all unique sector/subsector codes and descriptions from the OECD dataset
+3. Manually assigning each OECD CRS subsector/sector to the most relevant UN SDGs using our rule: **1 goal** if narrow, **2–3** if broad
+
+---
+
+## Our Dashboard (4 Tableau tabs)
+
+**Tab 1 — The Big Picture (Global Funding Explorer):**  
+We use a choropleth, stacked bar by sector over time, top donors, KPIs, and filters (year, region, sector, donor). We layer in `OECD_timeline.csv` for reference events.
+
+**Tab 2 — SDG Alignment (SDG widget):**  
+17 SDG tiles, a bubble chart, SDG × sector heatmap, SDG × region — powered by the OHE columns in `OECD_main` and/or the long file `OECD_sdg_long.csv`.
+
+**Tab 3 — Donor Deep Dive:**  
+Searchable donor view, profile panel, trend lines, optional flow — from `OECD_main.csv`.
+
+**Tab 4 — Funding Index (FAI):**  
+We visualize funding adequacy vs. burden using `OECD_fai.csv` (maps, dot plots, scatter as we designed).
 
 ---
 
 ## Key Dataset Notes
-- First ~30,043 rows are missing: `usd_commitment_defl`, `channel_*`, `environment`,
-  `biodiversity`, `desertification`, `nutrition` (earlier reporting period, not an error)
-- Use `usd_disbursements_defl` as the primary money metric (populated across all rows)
-- `usd_commitment_defl` is stored as text — needs dtype conversion before Tableau
-- `year` column has some "2020-2023" rows (NDA orgs with aggregated data) — filter out
-  for time series, or treat as a separate "NDA Aggregate" bucket
-- `expected_duration` is a text year range ("2021-2024") — convert to integer (end - start)
-- For Tableau sector/subsector labels: always use `sector_description` and
-  `subsector_description`, NOT the numeric codes
+- The first ~30,043 rows are missing `usd_commitment_defl`, `channel_*`, and several thematic fields (`environment`, `biodiversity`, `desertification`, `nutrition`) — that reflects an older reporting period, not a data entry mistake.
+- We use **`usd_disbursements_defl`** as our primary money field (populated for all rows).
+- `usd_commitment_defl` arrives as text — we convert it before analysis or Tableau.
+- Some rows use `year == "2020-2023"` (NDA org aggregates); we filter those out of time series or treat them as their own bucket.
+- `expected_duration` is a text year range (e.g. `"2021-2024"`) — we convert to integer years for `duration_years`.
+- In Tableau we label sectors with **`sector_description`** and **`subsector_description`**, not the raw numeric codes.
 
-## SDG Coverage Stats (from pipeline run)
+## SDG Coverage (from our pipeline run)
+
 | SDG | Description | Row Count | % of Dataset |
 |-----|-------------|-----------|-------------|
 | 1  | No Poverty | 13,649 | 11.7% |
